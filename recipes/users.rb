@@ -1,6 +1,6 @@
 #
 # Cookbook Name:: git
-# Attributes:: default
+# Recipe:: users
 #
 # Copyright 2011, ZephirWorks.
 #
@@ -17,15 +17,21 @@
 # limitations under the License.
 #
 
-default['git']['server_style'] = 'daemon'
-default['git']['user'] = 'git'
-default['git']['home_dir'] = '/home/git'
-
-default['git']['shell'] = case node[:platform]
-when "freebsd"
-  "/usr/local/libexec/git-core/git-shell"
-else
-  "/usr/bin/git-shell"
+directory "#{node[:git][:home_dir]}/.ssh" do
+  owner node[:git][:user]
+  group node[:git][:group]
+  mode 0700
 end
 
-default['git']['devel_group'] = 'git'
+keys = []
+search(:users, "groups:#{node[:git][:devel_group]}") do |u|
+  keys << u[:ssh_keys]
+end
+
+template "#{node[:git][:home_dir]}/.ssh/authorized_keys" do
+  source "authorized_keys.erb"
+  owner node[:git][:user]
+  group node[:git][:group]
+  mode "0600"
+  variables :ssh_keys => keys
+end
