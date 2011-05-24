@@ -3,6 +3,7 @@
 # Recipe:: server
 #
 # Copyright 2009, Opscode, Inc.
+# Copyright 2011, ZephirWorks
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,17 +19,27 @@
 
 include_recipe "git"
 
-directory "/srv/git" do
-  owner "root"
-  group "root"
-  mode 0755
-end
+case node[:git][:server_style]
+when "daemon"
+  directory node[:git][:home_dir] do
+    owner "root"
+    group "root"
+    mode 0755
+  end
 
-case node[:platform]
-when "debian", "ubuntu"
-  include_recipe "runit"
-  runit_service "git-daemon"
+  case node[:platform]
+  when "debian", "ubuntu"
+    include_recipe "runit"
+    runit_service "git-daemon"
+  else
+    log "Platform requires setting up a git daemon service script."
+    log "Hint: /usr/bin/git daemon --export-all --user=nobody --group=daemon --base-path=/srv/git"
+  end
+when "ssh"
+  user node[:git][:user] do
+    comment "git server"
+    home node[:git][:home_dir]
+    shell node[:git][:shell]
+  end
 else
-  log "Platform requires setting up a git daemon service script."
-  log "Hint: /usr/bin/git daemon --export-all --user=nobody --group=daemon --base-path=/srv/git"
 end
