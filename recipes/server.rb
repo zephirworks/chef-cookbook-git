@@ -40,6 +40,8 @@ when "ssh"
     comment "git server"
     home node[:git][:home_dir]
     shell node[:git][:shell]
+    manage_home true
   end
 else
 end
+
